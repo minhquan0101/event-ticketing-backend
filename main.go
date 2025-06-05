@@ -32,6 +32,7 @@ func main() {
 
 	// Kết nối MongoDB
 	config.ConnectDB()
+	config.ConnectRedis()
 	if config.GetDB() == nil {
 		log.Fatal("❌ Không thể khởi tạo MongoDB – kiểm tra ConnectDB()")
 	}

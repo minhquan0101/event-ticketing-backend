@@ -14,6 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -54,11 +55,18 @@ func Register(c *gin.Context) {  // dang ki
 	// Tạo mã xác nhận 6 số
 	verifyCode := fmt.Sprintf("%06d", rand.Intn(1000000))
 
+		// Lưu vào Redis (TTL 5 phút)
+	err = config.RedisClient.Set(config.RedisCtx, "verify:"+input.Email, verifyCode, 300*time.Second).Err()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể lưu mã xác nhận"})
+		return
+	}
+
 	// Cập nhật dữ liệu user
 	input.Password = hashedPassword
 	input.Role = "user"
 	input.IsVerified = false
-	input.VerifyCode = verifyCode
+	input.VerifyCode = ""
 
 	// Gửi mã xác nhận qua Gmail
 	err = utils.SendVerifyCode(input.Email, verifyCode)
@@ -171,7 +179,17 @@ func VerifyEmail(c *gin.Context) {// Xác minh email
 		return
 	}
 
-	if user.VerifyCode != req.Code {
+	// Lấy mã từ Redis
+	storedCode, err := config.RedisClient.Get(config.RedisCtx, "verify:"+req.Email).Result()
+	if err == redis.Nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Mã xác nhận đã hết hạn"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi hệ thống"})
+		return
+	}
+
+	if storedCode != req.Code {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Mã xác nhận không đúng"})
 		return
 	}
@@ -183,6 +201,8 @@ func VerifyEmail(c *gin.Context) {// Xác minh email
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi xác minh tài khoản"})
 		return
 	}
+
+	config.RedisClient.Del(config.RedisCtx, "verify:"+req.Email)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Xác minh thành công!"})
 }
