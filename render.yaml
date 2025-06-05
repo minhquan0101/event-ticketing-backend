@@ -4,10 +4,11 @@ services:
     env: go
     buildCommand: go build -o server main.go
     startCommand: ./server
+    plan: free
     envVars:
       - key: MONGO_URI
-        value: mongodb+srv://<TÀI_KHOẢN>:<MẬT_KHẨU>@<HOST>/<DB>?retryWrites=true&w=majority
+        value: mongodb+srv://admin:quan010104@cluster0.voy9uwe.mongodb.net/event-ticketing?retryWrites=true&w=majority
       - key: JWT_SECRET
-        value: your_jwt_secret_key
-      - key: REDIS_URL
-        value: redis://default:<password>@<host>:<port>
+        value: quan-ticketing-secret-2025
+      # - key: REDIS_URL
+      #   value: redis://default:<REDIS_PASSWORD>@<REDIS_HOST>:<PORT>
