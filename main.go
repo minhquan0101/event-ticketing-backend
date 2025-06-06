@@ -12,15 +12,17 @@ import (
 	"log"
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
 	"event-ticketing/config"
 	"event-ticketing/routes"
 
-	_ "event-ticketing/docs"                            
-	ginSwagger "github.com/swaggo/gin-swagger"         
-	swaggerFiles "github.com/swaggo/files"             
+	_ "event-ticketing/docs"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func main() {
@@ -39,6 +41,8 @@ func main() {
 
 	// Tạo router Gin
 	r := gin.Default()
+
+	r.Use(cors.Default())
 
 	// Route tài liệu Swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
