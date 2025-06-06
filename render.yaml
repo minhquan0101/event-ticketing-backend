@@ -10,5 +10,6 @@ services:
         value: mongodb+srv://admin:quan010104@cluster0.voy9uwe.mongodb.net/event-ticketing?retryWrites=true&w=majority
       - key: JWT_SECRET
         value: quan-ticketing-secret-2025
-      # - key: REDIS_URL
-      #   value: redis://default:<REDIS_PASSWORD>@<REDIS_HOST>:<PORT>
+      - key: REDIS_URL
+        value: redis://default:123456@redis-15256.c1.ap-southeast-1-1.ec2.redns.redis-cloud.com:15256
+
