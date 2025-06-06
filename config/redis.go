@@ -2,22 +2,29 @@ package config
 
 import (
 	"context"
-	"github.com/redis/go-redis/v9"
 	"log"
+	"os"
+
+	"github.com/redis/go-redis/v9"
 )
 
 var RedisClient *redis.Client
 var RedisCtx = context.Background()
 
 func ConnectRedis() {
-	RedisClient = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379", // hoặc từ REDIS_URL
-		Password: "",               // nếu có mật khẩu thì thêm vào
-		DB:       0,
-	})
+	redisURL := os.Getenv("REDIS_URL")
 
-	_, err := RedisClient.Ping(RedisCtx).Result()
+	opt, err := redis.ParseURL(redisURL)
+	if err != nil {
+		log.Fatal("Không thể parse REDIS_URL:", err)
+	}
+
+	RedisClient = redis.NewClient(opt)
+
+	_, err = RedisClient.Ping(RedisCtx).Result()
 	if err != nil {
 		log.Fatal("Không thể kết nối Redis:", err)
 	}
+
+	log.Println("✅ Đã kết nối Redis thành công")
 }
