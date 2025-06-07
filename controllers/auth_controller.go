@@ -16,6 +16,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Register godoc
@@ -55,8 +56,9 @@ func Register(c *gin.Context) {
 	// Tạo mã xác nhận 6 số
 	verifyCode := fmt.Sprintf("%06d", rand.Intn(1000000))
 
+
 	// ✅ Gán quyền dựa vào email
-	if input.Email == "quanndm.125010123111@vtc.edu.vn" {
+	if input.Email == "quan1235873@gmail.com" {
 	input.Role = "admin"
 	userCollection.DeleteMany(context.TODO(), bson.M{"email": input.Email})
 	} else {
@@ -68,6 +70,10 @@ func Register(c *gin.Context) {
 	// input.Role = role
 	input.IsVerified = false
 	input.VerifyCode = verifyCode
+	input.VerifyExpiresAt = primitive.NewDateTimeFromTime(time.Now().Add(15 * time.Minute))
+
+
+	
 
 	// Gửi mã xác nhận qua Gmail
 	err = utils.SendVerifyCode(input.Email, verifyCode)
@@ -171,6 +177,11 @@ func VerifyEmail(c *gin.Context) {// Xác minh email
 	filter := bson.M{"email": req.Email}
 	var user models.User
 	err := userCollection.FindOne(context.TODO(), filter).Decode(&user)
+	if time.Now().After(user.VerifyExpiresAt.Time()) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Mã xác nhận đã hết hạn"})
+		return
+	}	
+
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Không tìm thấy người dùng"})
 		return
