@@ -83,24 +83,26 @@ func GetEventByID(c *gin.Context) { // GET /api/events/:id
 // @Failure 403 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /api/events [post]
-func CreateEvent(c *gin.Context) { // POST /api/events (admin)
-	eventCollection := config.GetDB().Collection("events")
-
+func CreateEvent(c *gin.Context) {
 	var input models.Event
+
+	// Parse JSON từ client
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Dữ liệu không hợp lệ"})
 		return
 	}
 
-	role, _ := c.Get("role")
-	if role != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Bạn không có quyền tạo sự kiện"})
+	// Kiểm tra các trường quan trọng
+	if input.Name == "" || input.Location == "" || input.Date.IsZero() || input.AvailableTickets <= 0 || input.TicketPrice <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Vui lòng nhập đầy đủ và hợp lệ các trường"})
 		return
 	}
 
+	// Gán thời gian tạo
 	input.CreatedAt = time.Now()
-	input.AvailableTickets = input.TotalTickets
 
+	// Lưu vào DB
+	eventCollection := config.GetDB().Collection("events")
 	_, err := eventCollection.InsertOne(context.TODO(), input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể tạo sự kiện"})
