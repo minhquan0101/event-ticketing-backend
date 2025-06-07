@@ -162,7 +162,7 @@ func Login(c *gin.Context) {  // Đăng nhập
 // @Failure 400 {object} map[string]string
 // @Failure 401 {object} map[string]string
 // @Router /api/verify-email [post]
-func VerifyEmail(c *gin.Context) {// Xác minh email
+func VerifyEmail(c *gin.Context) {
 	var req struct {
 		Email string `json:"email"`
 		Code  string `json:"code"`
@@ -178,13 +178,14 @@ func VerifyEmail(c *gin.Context) {// Xác minh email
 	filter := bson.M{"email": req.Email}
 	var user models.User
 	err := userCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if time.Now().After(user.VerifyExpiresAt) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Mã xác nhận đã hết hạn"})
-		return
-	}	
-
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Không tìm thấy người dùng"})
+		return
+	}
+
+	// ✅ Sau khi chắc chắn có user → mới kiểm tra thời gian
+	if time.Now().After(user.VerifyExpiresAt) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Mã xác nhận đã hết hạn"})
 		return
 	}
 
@@ -193,13 +194,13 @@ func VerifyEmail(c *gin.Context) {// Xác minh email
 		return
 	}
 
-	// Lấy mã từ Redis
+	// ✅ Kiểm tra mã trong Redis
 	storedCode, err := config.RedisClient.Get(config.RedisCtx, "verify:"+req.Email).Result()
 	if err == redis.Nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Mã xác nhận đã hết hạn"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Mã xác nhận đã hết hạn (Redis)"})
 		return
 	} else if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi hệ thống"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi hệ thống Redis"})
 		return
 	}
 
@@ -208,6 +209,7 @@ func VerifyEmail(c *gin.Context) {// Xác minh email
 		return
 	}
 
+	// ✅ Cập nhật xác minh thành công
 	_, err = userCollection.UpdateOne(context.TODO(), filter, bson.M{
 		"$set": bson.M{"is_verified": true, "verify_code": ""},
 	})
@@ -216,7 +218,9 @@ func VerifyEmail(c *gin.Context) {// Xác minh email
 		return
 	}
 
+	// ✅ Xoá mã khỏi Redis
 	config.RedisClient.Del(config.RedisCtx, "verify:"+req.Email)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Xác minh thành công!"})
 }
+
