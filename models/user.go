@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -12,5 +14,5 @@ type User struct {
 	Role        string             `bson:"role" json:"role"` // "user" hoặc "admin"
 	IsVerified  bool               `bson:"is_verified" json:"is_verified"` // đã xác minh Gmail chưa
 	VerifyCode  string             `bson:"verify_code,omitempty" json:"-"` // mã xác minh
-	VerifyExpiresAt  primitive.DateTime `bson:"verify_expires_at,omitempty" json:"verify_expires_at,omitempty"`
+	VerifyExpiresAt time.Time `bson:"verify_expires_at,omitempty" json:"verify_expires_at,omitempty"`
 }

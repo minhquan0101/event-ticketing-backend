@@ -16,7 +16,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	
 )
 
 // Register godoc
@@ -39,11 +39,17 @@ func Register(c *gin.Context) {
 
 	userCollection := config.GetDB().Collection("users")
 
-	// Kiểm tra email đã tồn tại chưa
-	count, _ := userCollection.CountDocuments(context.TODO(), bson.M{"email": input.Email})
-	if count > 0 {
+	// Tìm email đã tồn tại chưa
+	var existing models.User
+	err := userCollection.FindOne(context.TODO(), bson.M{"email": input.Email}).Decode(&existing)
+	if err == nil && existing.IsVerified {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Email đã tồn tại"})
 		return
+	}
+
+	// Nếu email tồn tại mà chưa xác minh → xóa để ghi đè
+	if err == nil && !existing.IsVerified {
+		_, _ = userCollection.DeleteOne(context.TODO(), bson.M{"email": input.Email})
 	}
 
 	// Hash mật khẩu
@@ -56,33 +62,27 @@ func Register(c *gin.Context) {
 	// Tạo mã xác nhận 6 số
 	verifyCode := fmt.Sprintf("%06d", rand.Intn(1000000))
 
-
-	// ✅ Gán quyền dựa vào email
-	if input.Email == "quan1235873@gmail.com" {
-	input.Role = "admin"
-	userCollection.DeleteMany(context.TODO(), bson.M{"email": input.Email})
-	} else {
-	input.Role = "user"
+	// Gán quyền
+	role := "user"
+	if input.Email == "quanndm.125010123111@vtc.edu.vn" {
+		role = "admin"
 	}
 
-	// Cập nhật dữ liệu user
+	// Gán thông tin user mới
 	input.Password = hashedPassword
-	// input.Role = role
+	input.Role = role
 	input.IsVerified = false
 	input.VerifyCode = verifyCode
-	input.VerifyExpiresAt = primitive.NewDateTimeFromTime(time.Now().Add(15 * time.Minute))
+	input.VerifyExpiresAt = time.Now().Add(15 * time.Minute)
 
-
-	
-
-	// Gửi mã xác nhận qua Gmail
+	// Gửi mã xác nhận
 	err = utils.SendVerifyCode(input.Email, verifyCode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể gửi mã xác nhận"})
 		return
 	}
 
-	// Lưu vào MongoDB
+	// Lưu user
 	_, err = userCollection.InsertOne(context.TODO(), input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể tạo tài khoản"})
@@ -91,6 +91,7 @@ func Register(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Đăng ký thành công. Vui lòng kiểm tra email để xác nhận."})
 }
+
 
 
 // Login godoc
@@ -177,7 +178,7 @@ func VerifyEmail(c *gin.Context) {// Xác minh email
 	filter := bson.M{"email": req.Email}
 	var user models.User
 	err := userCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if time.Now().After(user.VerifyExpiresAt.Time()) {
+	if time.Now().After(user.VerifyExpiresAt) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Mã xác nhận đã hết hạn"})
 		return
 	}	
