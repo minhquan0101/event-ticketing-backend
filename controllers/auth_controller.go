@@ -29,7 +29,7 @@ import (
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /api/register [post]
-func Register(c *gin.Context) {  // dang ki
+func Register(c *gin.Context) {
 	var input models.User
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Dữ liệu không hợp lệ"})
@@ -55,18 +55,18 @@ func Register(c *gin.Context) {  // dang ki
 	// Tạo mã xác nhận 6 số
 	verifyCode := fmt.Sprintf("%06d", rand.Intn(1000000))
 
-		// Lưu vào Redis (TTL 5 phút)
-	err = config.RedisClient.Set(config.RedisCtx, "verify:"+input.Email, verifyCode, 300*time.Second).Err()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể lưu mã xác nhận"})
-		return
+	// ✅ Gán quyền dựa vào email
+	if input.Email == "quan123587@gmail.com" {
+	input.Role = "admin"
+	} else {
+	input.Role = "user"
 	}
 
 	// Cập nhật dữ liệu user
 	input.Password = hashedPassword
-	input.Role = "user"
+	// input.Role = role
 	input.IsVerified = false
-	input.VerifyCode = ""
+	input.VerifyCode = verifyCode
 
 	// Gửi mã xác nhận qua Gmail
 	err = utils.SendVerifyCode(input.Email, verifyCode)
@@ -84,6 +84,7 @@ func Register(c *gin.Context) {  // dang ki
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Đăng ký thành công. Vui lòng kiểm tra email để xác nhận."})
 }
+
 
 // Login godoc
 // @Summary Đăng nhập
