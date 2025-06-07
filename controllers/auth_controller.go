@@ -64,7 +64,7 @@ func Register(c *gin.Context) {
 
 	// Gán quyền
 	role := "user"
-	if input.Email == "quanndm.125010123111@vtc.edu.vn" {
+	if input.Email == "quan123587@gmail.com" {
 		role = "admin"
 	}
 
