@@ -58,6 +58,7 @@ func Register(c *gin.Context) {
 	// ✅ Gán quyền dựa vào email
 	if input.Email == "quan123587@gmail.com" {
 	input.Role = "admin"
+	userCollection.DeleteMany(context.TODO(), bson.M{"email": input.Email})
 	} else {
 	input.Role = "user"
 	}
