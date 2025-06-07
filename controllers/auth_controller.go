@@ -56,7 +56,7 @@ func Register(c *gin.Context) {
 	verifyCode := fmt.Sprintf("%06d", rand.Intn(1000000))
 
 	// ✅ Gán quyền dựa vào email
-	if input.Email == "quan1235877@gmail.com" {
+	if input.Email == "quanndm.125010123111@vtc.edu.vn" {
 	input.Role = "admin"
 	userCollection.DeleteMany(context.TODO(), bson.M{"email": input.Email})
 	} else {
