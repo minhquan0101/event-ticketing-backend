@@ -36,10 +36,19 @@ type OrderDetail struct {
 func GetMyOrders(c *gin.Context) {
 	db := config.GetDB()
 	userIDStr, _ := c.Get("user_id")
-	userID, _ := primitive.ObjectIDFromHex(userIDStr.(string))
+	role, _ := c.Get("role")
 
-	// 1. Lấy tất cả đơn hàng của user
-	orderCursor, err := db.Collection("orders").Find(context.TODO(), bson.M{"user_id": userID})
+	// ✅ Thêm phân quyền: admin xem tất cả, user chỉ xem của mình
+	var filter bson.M
+	if role == "admin" {
+		filter = bson.M{} // admin xem tất cả đơn
+	} else {
+		userID, _ := primitive.ObjectIDFromHex(userIDStr.(string))
+		filter = bson.M{"user_id": userID}
+	}
+
+	// 1. Lấy tất cả đơn hàng theo filter
+	orderCursor, err := db.Collection("orders").Find(context.TODO(), filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể lấy đơn hàng"})
 		return
@@ -84,3 +93,4 @@ func GetMyOrders(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
+
