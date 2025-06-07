@@ -32,7 +32,7 @@ func main() {
 		log.Println("⚠️ Không thể load file .env, sẽ dùng biến hệ thống")
 	}
 
-	// Kết nối MongoDB
+	// Kết nối MongoDB và Redis
 	config.ConnectDB()
 	config.ConnectRedis()
 	if config.GetDB() == nil {
@@ -42,7 +42,14 @@ func main() {
 	// Tạo router Gin
 	r := gin.Default()
 
-	r.Use(cors.Default())
+	// ✅ Cấu hình CORS đầy đủ để cho phép frontend gửi Authorization
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 
 	// Route tài liệu Swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
