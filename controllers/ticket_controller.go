@@ -25,10 +25,7 @@ import (
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /api/tickets/order [post]
-
-
-// Đặt vé sự kiện + tính tiền tự động
-func PlaceOrder(c *gin.Context) {
+func PlaceOrder(c *gin.Context) {  // Đặt vé sự kiện + tính tiền tự động
 	var req struct {
 		EventID  string `json:"event_id"`
 		Quantity int    `json:"quantity"`
