@@ -98,6 +98,12 @@ func CreateEvent(c *gin.Context) {
 		return
 	}
 
+	// Kiểm tra ngày không được ở quá khứ
+	if input.Date.Before(time.Now()) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ngày sự kiện phải nằm trong tương lai"})
+		return
+	}
+
 	// Gán thời gian tạo
 	input.CreatedAt = time.Now()
 
