@@ -19,6 +19,8 @@ import (
 	"event-ticketing/config"
 	"event-ticketing/routes"
 
+	socketio "github.com/googollee/go-socket.io"
+
 	_ "event-ticketing/docs"
 
 	swaggerFiles "github.com/swaggo/files"
@@ -27,22 +29,21 @@ import (
 
 func main() {
 	// Load biến môi trường
-	err := godotenv.Load()
-	if err != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Println("⚠️ Không thể load file .env, sẽ dùng biến hệ thống")
 	}
 
-	// Kết nối MongoDB và Redis
+	// Kết nối DB & Redis
 	config.ConnectDB()
 	config.ConnectRedis()
 	if config.GetDB() == nil {
 		log.Fatal("❌ Không thể khởi tạo MongoDB – kiểm tra ConnectDB()")
 	}
 
-	// Tạo router Gin
+	// Khởi tạo router Gin
 	r := gin.Default()
 
-	// ✅ Cấu hình CORS đầy đủ để cho phép frontend gửi Authorization
+	// Cấu hình CORS
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -51,24 +52,48 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	// Route tài liệu Swagger
+	// Tài liệu Swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Đăng ký API route chính
+	// Đăng ký các API routes
 	routes.RegisterRoutes(r)
 
-	// Lấy PORT
+	// ✅ Khởi tạo server socket.io – phiên bản mới chỉ trả về 1 giá trị
+	server := socketio.NewServer(nil)
+	// Gán server socket vào config để dùng toàn cục ở controller
+	config.SocketServer = server
+
+	// Xử lý sự kiện socket
+	server.OnConnect("/", func(s socketio.Conn) error {
+		log.Println("🟢 Socket client connected:", s.ID())
+		return nil
+	})
+
+	server.OnDisconnect("/", func(s socketio.Conn, reason string) {
+		log.Println("🔴 Socket client disconnected:", s.ID(), "Lý do:", reason)
+	})
+
+	server.OnError("/", func(s socketio.Conn, e error) {
+		log.Println("⚠️ Socket error:", e)
+	})
+
+	// Gắn socket server vào Gin
+	r.GET("/socket.io/*any", gin.WrapH(server))
+	r.POST("/socket.io/*any", gin.WrapH(server))
+
+	// Phục vụ static cho ảnh
+	r.Static("/static", "./static")
+
+	// Lấy PORT từ env hoặc mặc định 8080
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
 	// Chạy server
-	err = r.Run(":" + port)
-	if err != nil {
-		log.Fatal("❌ Không thể khởi chạy server:", err)
-	}
-
 	log.Println("🚀 Server chạy tại http://localhost:" + port)
 	log.Println("📚 Swagger tại     http://localhost:" + port + "/swagger/index.html")
+	if err := r.Run(":" + port); err != nil {
+		log.Fatal("❌ Không thể khởi chạy server:", err)
+	}
 }
