@@ -16,16 +16,29 @@ import (
 
 // GetAllEvents godoc
 // @Summary Lấy danh sách sự kiện
-// @Description Trả về tất cả sự kiện trong hệ thống
+// @Description Trả về tất cả sự kiện hoặc theo từ khóa tìm kiếm
 // @Tags Event
 // @Produce json
+// @Param search query string false "Từ khóa tìm kiếm theo tên/mô tả"
 // @Success 200 {array} models.Event
 // @Failure 500 {object} map[string]string
 // @Router /api/events [get]
 func GetAllEvents(c *gin.Context) {
 	eventCollection := config.GetDB().Collection("events")
+	search := c.Query("search")
 
-	cursor, err := eventCollection.Find(context.TODO(), bson.M{})
+	// Thiết lập filter tìm kiếm
+	filter := bson.M{}
+	if search != "" {
+		filter = bson.M{
+			"$or": []bson.M{
+				{"name": bson.M{"$regex": search, "$options": "i"}},
+				{"description": bson.M{"$regex": search, "$options": "i"}},
+			},
+		}
+	}
+
+	cursor, err := eventCollection.Find(context.TODO(), filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể lấy danh sách sự kiện"})
 		return
@@ -40,6 +53,7 @@ func GetAllEvents(c *gin.Context) {
 
 	c.JSON(http.StatusOK, events)
 }
+
 
 // GetEventByID godoc
 // @Summary Lấy chi tiết sự kiện
