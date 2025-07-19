@@ -27,8 +27,6 @@ func RegisterRoutes(r *gin.Engine) {
 		// Ticket
 		protected.POST("/tickets/order", controllers.PlaceOrder)
 		protected.GET("/orders/my", controllers.GetMyOrders)
-		// protected.POST("/orders", controllers.CreateOrder)
-
 
 		// Optional: routes dành cho admin
 		protected.POST("/events", controllers.CreateEvent)
