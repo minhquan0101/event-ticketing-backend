@@ -46,10 +46,11 @@ func main() {
 	// ✅ Cấu hình CORS – mở cho localhost và domain frontend
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
-			"http://localhost:5173",                            // local dev
-			"https://event-ticketing-frontend.onrender.com",   // nếu frontend deploy ở Render
-			// "*" // 👈 Tùy chọn mở toàn bộ (KHÔNG dùng khi AllowCredentials = true)
-		},
+    "http://localhost:5173",                    // local dev
+    "https://client.minhquan.site",            // ✅ domain thật
+    "https://event-ticketing-frontend.onrender.com",
+	},
+
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
