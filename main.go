@@ -43,9 +43,13 @@ func main() {
 	// Khởi tạo router Gin
 	r := gin.Default()
 
-	// Cấu hình CORS
+	// ✅ Cấu hình CORS – mở cho localhost và domain frontend
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowOrigins: []string{
+			"http://localhost:5173",                            // local dev
+			"https://event-ticketing-frontend.onrender.com",   // nếu frontend deploy ở Render
+			// "*" // 👈 Tùy chọn mở toàn bộ (KHÔNG dùng khi AllowCredentials = true)
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -60,10 +64,8 @@ func main() {
 
 	// ✅ Khởi tạo server socket.io – phiên bản mới chỉ trả về 1 giá trị
 	server := socketio.NewServer(nil)
-	// Gán server socket vào config để dùng toàn cục ở controller
 	config.SocketServer = server
 
-	// Xử lý sự kiện socket
 	server.OnConnect("/", func(s socketio.Conn) error {
 		log.Println("🟢 Socket client connected:", s.ID())
 		return nil
