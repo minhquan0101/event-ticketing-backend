@@ -51,6 +51,7 @@ func main() {
             origin == "https://client.minhquan.site" ||
             origin == "https://event-ticketing-frontend.onrender.com"
     },
+	AllowAllOrigins: true, // ✅ Dùng tạm để test
     AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
     AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
     ExposeHeaders:    []string{"Content-Length"},
