@@ -3,7 +3,7 @@
 // @description API backend quản lý sự kiện và đặt vé bằng Golang
 // @contact.name Dự án nhóm - sử dụng với ChatGPT
 // @contact.email your_email@example.com
-// @host localhost:8080
+// @host api.minhquan.site
 // @BasePath /
 
 package main
@@ -43,27 +43,26 @@ func main() {
 	// Khởi tạo router Gin
 	r := gin.Default()
 
-	// ✅ Cấu hình CORS – mở cho localhost và domain frontend
+	// ✅ Cấu hình CORS cho các domain frontend
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
-    "http://localhost:5173",                    // local dev
-    "https://client.minhquan.site",            // ✅ domain thật
-    "https://event-ticketing-frontend.onrender.com",
-	},
-
+			"http://localhost:5173",
+			"https://client.minhquan.site", // ✅ frontend domain thật
+			"https://event-ticketing-frontend.onrender.com",
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
 
-	// Tài liệu Swagger
+	// Swagger docs
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Đăng ký các API routes
+	// Đăng ký API routes
 	routes.RegisterRoutes(r)
 
-	// ✅ Khởi tạo server socket.io – phiên bản mới chỉ trả về 1 giá trị
+	// Cấu hình socket.io
 	server := socketio.NewServer(nil)
 	config.SocketServer = server
 
@@ -80,23 +79,22 @@ func main() {
 		log.Println("⚠️ Socket error:", e)
 	})
 
-	// Gắn socket server vào Gin
 	r.GET("/socket.io/*any", gin.WrapH(server))
 	r.POST("/socket.io/*any", gin.WrapH(server))
 
-	// Phục vụ static cho ảnh
+	// Serve static files
 	r.Static("/static", "./static")
 
-	// Lấy PORT từ env hoặc mặc định 8080
+	// Cổng
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	// Chạy server
-	log.Println("🚀 Server chạy tại http://localhost:" + port)
-	log.Println("📚 Swagger tại     http://localhost:" + port + "/swagger/index.html")
-	if err := r.Run(":" + port); err != nil {
+	// ✅ Quan trọng: dùng 0.0.0.0 thay vì localhost
+	log.Println("🚀 Server chạy tại http://0.0.0.0:" + port)
+	log.Println("📚 Swagger tại     http://0.0.0.0:" + port + "/swagger/index.html")
+	if err := r.Run("0.0.0.0:" + port); err != nil {
 		log.Fatal("❌ Không thể khởi chạy server:", err)
 	}
 }
