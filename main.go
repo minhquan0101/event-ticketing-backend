@@ -45,16 +45,18 @@ func main() {
 
 	// ✅ Cấu hình CORS cho các domain frontend
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{
-			"http://localhost:5173",
-			"https://client.minhquan.site", // ✅ frontend domain thật
-			"https://event-ticketing-frontend.onrender.com",
-		},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-	}))
+    AllowOriginFunc: func(origin string) bool {
+        // Chấp nhận các domain cụ thể
+        return origin == "http://localhost:5173" ||
+            origin == "https://client.minhquan.site" ||
+            origin == "https://event-ticketing-frontend.onrender.com"
+    },
+    AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+    AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+    ExposeHeaders:    []string{"Content-Length"},
+    AllowCredentials: true,
+}))
+
 
 	// Swagger docs
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
