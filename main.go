@@ -45,18 +45,17 @@ func main() {
 
 	// ✅ Cấu hình CORS cho các domain frontend
 	r.Use(cors.New(cors.Config{
-    AllowOriginFunc: func(origin string) bool {
-        // Chấp nhận các domain cụ thể
-        return origin == "http://localhost:5173" ||
-            origin == "https://client.minhquan.site" ||
-            origin == "https://event-ticketing-frontend.onrender.com"
+    AllowOrigins:     []string{
+        "http://localhost:5173",
+        "https://client.minhquan.site",
+        "https://event-ticketing-frontend.onrender.com",
     },
-	AllowAllOrigins: true, // ✅ Dùng tạm để test
     AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
     AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
     ExposeHeaders:    []string{"Content-Length"},
     AllowCredentials: true,
 }))
+
 
 
 	// Swagger docs
